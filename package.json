@@ -8,5 +8,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "playwright": "^1.50.1",
+    "proxy-chain": "^2.5.6"
+  }
 }
