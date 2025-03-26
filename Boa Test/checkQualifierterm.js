@@ -1,8 +1,7 @@
 const fs = require('fs');
 
 // Define the correct file path
-const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 LA2 ERB0615- 2025-03-14';
-//const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 ATL EZD0616- 2025-03-13';
+const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 FLO EDS0614- 2025-03-14';
 
 fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
@@ -17,9 +16,8 @@ fs.readFile(filePath, 'utf8', (err, data) => {
     const headerCount = sections.length - 1;
     console.log(`✅ Found "Qualifier masks level 2" headers: ${headerCount}\n`);
 
-    // Define pattern to find "Desc: Special Offer@TMON" and its preceding two lines
-
-    const entryPattern = /([^\n]+\n[^\n]+)\nDesc:\s+Special Offer@TMON.*/gi;
+    // Define pattern to search for "Desc: Community Sales@TMON"
+    const salesPattern = /Desc:\s+Community Sales@TMON.*/g;
 
     let totalSalesMatches = 0;
     let allSectionsPass = true;
@@ -30,14 +28,7 @@ fs.readFile(filePath, 'utf8', (err, data) => {
 
         console.log(`🟢 **Qualifier masks level 2 - Section ${index}**`);
 
-        let matches = [];
-        let match;
-
-        // Extract matches using regex
-        while ((match = entryPattern.exec(section)) !== null) {
-            matches.push(`${match[1].trim()}\nDesc: Special Offer@TMON.`);
-        }
-
+        const matches = section.match(salesPattern) || [];
         totalSalesMatches += matches.length;
 
         if (matches.length < 25) {
@@ -47,14 +38,14 @@ fs.readFile(filePath, 'utf8', (err, data) => {
 
         // Print all occurrences in this section
         matches.forEach((entry, i) => {
-            console.log(`${i + 1}.\n${entry}\n`);
+            console.log(`${i + 1}. ${entry}`);
         });
 
         console.log("\n--------------------------------------------------\n");
     });
 
     // Summary
-    console.log(`✅ Total occurrences of "Desc: Special Offer@TMON" across all sections: ${totalSalesMatches}`);
+    console.log(`✅ Total occurrences of "Desc: Community Sales@TMON" across all sections: ${totalSalesMatches}`);
 
     if (allSectionsPass) {
         console.log("✅ Every 'Qualifier masks level 2' section contains at least 25 occurrences.");

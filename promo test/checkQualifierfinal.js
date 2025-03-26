@@ -1,8 +1,8 @@
 const fs = require('fs');
 
 // Define the correct file path
-const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 WDC EDC0618- 2025-03-13';
-// const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 ATL EZD0616- 2025-03-13';
+const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 FLO EDS0614- 2025-03-14';
+//const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 ATL EZD0616- 2025-03-13';
 
 fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
@@ -17,8 +17,9 @@ fs.readFile(filePath, 'utf8', (err, data) => {
     const headerCount = sections.length - 1;
     console.log(`✅ Found "Qualifier masks level 2" headers: ${headerCount}\n`);
 
-    // Define pattern to find "Desc: Special Offer@TMON" and its preceding two lines plus the discount line
-    const entryPattern = /([^\n]+\n[^\n]+)\nDesc:\s+Special Offer@TMON.\nDiscount Number \(1 - SOLD type:Standard Admission\)/g;
+    // Define pattern to find "Desc: Special Offer@TMON" and its preceding two lines
+
+    const entryPattern = /([^\n]+\n[^\n]+)\nDesc:\s+Special Offer@TMON.*/gi;
 
     let totalSalesMatches = 0;
     let allSectionsPass = true;
@@ -34,7 +35,7 @@ fs.readFile(filePath, 'utf8', (err, data) => {
 
         // Extract matches using regex
         while ((match = entryPattern.exec(section)) !== null) {
-            matches.push(`${match[1].trim()}\nDesc: Special Offer@TMON.\nDiscount Number (1 - SOLD type:Standard Admission)`);
+            matches.push(`${match[1].trim()}\nDesc: Special Offer@TMON.`);
         }
 
         totalSalesMatches += matches.length;
