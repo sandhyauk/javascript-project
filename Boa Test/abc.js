@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // Define the correct file path
-const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 FLO EDS0614- 2025-03-14';
+const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 CH6 ETQ0615- 2025-04-02';
 // const filePath = 'C:\\Users\\san8577\\TMFiles\\EVAL Q4 ATL EZD0616- 2025-03-13';
 
 fs.readFile(filePath, 'utf8', (err, data) => {
