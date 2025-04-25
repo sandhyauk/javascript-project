@@ -1,6 +1,6 @@
 const fs = require('fs');
-const path = 'C:\\Users\\san8577\\TMFiles\\EVAL O5 Q4 CH6 ETQ0615- 2025-04-22';
-const outputPath = 'C:\\Users\\san8577\\TMFiles\\match_codes_report_CH6.txt';
+const path = 'C:\\Users\\san8577\\TMFiles\\EVAL O5 Q4 FL2I EOCS0617- 2025-04-24';
+const outputPath = 'C:\\Users\\san8577\\TMFiles\\match_codes_report_FL2I.txt';
 
 const teamCodes = [
   "ATLUTD", "AUSTIN", "CHARLO", "CHICAG", "FCCINC", "COLORA", "COLUMB", "DCUNIT", "FCDALL", "HOUSTO",
