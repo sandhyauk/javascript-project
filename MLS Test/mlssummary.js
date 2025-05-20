@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = 'C:\\Users\\san8577\\TMFiles\\EVAL O5 Q4 FL2I EOCS0617- 2025-04-24';
+const path = 'C:\\Users\\san8577\\TMFiles\\EVAL S3 -RE ATL EZD0616-- 2025-05-20';
 
 // ✅ Team codes to check
 const teamCodes = [

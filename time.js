@@ -19,9 +19,9 @@ function getFormattedDate(dt) {
 }
 
 // 🕘 Inputs
-const enableDateStr = 'April 26th';
+const enableDateStr = 'May 13th';
 const enableTimeStr = '10:00am';
-const disableDateStr = 'May 3rd';
+const disableDateStr = 'July 13th';
 const disableTimeStr = '11:59pm';
 
 // 🔄 Parse in Eastern Time
