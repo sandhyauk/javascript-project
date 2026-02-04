@@ -522,7 +522,7 @@ function main() {
   const files = fs.readdirSync(BASE_DIR);
 
   const masterFile = files.find((f) => f.toLowerCase().endsWith(".xlsx"));
-  const usdFile = files.find((f) => f.toLowerCase().includes("us") && f.toLowerCase().endsWith(".xls"));
+  const usdFile = files.find((f) => f.toLowerCase().includes("usd") && f.toLowerCase().endsWith(".xls"));
   const cadFile = files.find((f) => f.toLowerCase().includes("cad") && f.toLowerCase().endsWith(".xls"));
   const mxnFile = files.find((f) => f.toLowerCase().includes("mex") && f.toLowerCase().endsWith(".xls"));
 
