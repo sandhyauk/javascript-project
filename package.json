@@ -8,10 +8,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "checkQualifiercount---output",
   "dependencies": {
     "luxon": "^3.6.1",
     "playwright": "^1.50.1",
-    "proxy-chain": "^2.5.6"
+    "proxy-chain": "^2.5.6",
+    "xlsx": "^0.18.5",
+    "yargs": "^18.0.0"
   }
 }

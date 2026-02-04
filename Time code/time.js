@@ -19,8 +19,8 @@ function getFormattedDate(dt) {
 }
 
 // 🕘 Inputs
-const enableDateStr = 'May 13th';
-const enableTimeStr = '10:00am';
+const enableDateStr = 'June 15th';
+const enableTimeStr = '12:00pm';
 const disableDateStr = 'July 13th';
 const disableTimeStr = '11:59pm';
 

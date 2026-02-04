@@ -3,4 +3,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/Compare
+/rates-diff-report.json
+
 
