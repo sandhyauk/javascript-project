@@ -5,12 +5,13 @@
  * Folder:
  *   C:\Users\san8577\PlaywrightRepos\javascript\Compare
  *
- * Expected per master tag M###:
- *  - master .xlsx that contains M###
- *  - 3 exports .xls that start with SAME M### and contain tokens:
+ * Expected (per master M###):
+ *  - master:  M###*.xlsx
+ *  - exports: start with same M### and contain currency token:
  *      USD: "usd" or "us"
  *      CAD: "cad"
  *      MXN: "mex" or "mxn"
+ *    (case-insensitive token match; avoids "status" matching "us")
  *
  * Run:
  *   node compare-rates-summary.js
@@ -46,10 +47,7 @@ const TARIFF_EQUIV_MASTER_TO_EXPORT = {
 };
 
 const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
-  Object.entries(TARIFF_EQUIV_MASTER_TO_EXPORT).map(([m, e]) => [
-    String(e).toUpperCase(),
-    String(m).toUpperCase(),
-  ])
+  Object.entries(TARIFF_EQUIV_MASTER_TO_EXPORT).map(([m, e]) => [String(e).toUpperCase(), String(m).toUpperCase()])
 );
 
 // -------------------- HTML helpers --------------------
@@ -196,7 +194,8 @@ function seatKey(x) {
   return keyText(x).replace(/\s+/g, "").replace(/-+/g, "-");
 }
 
-// -------------------- price parsing --------------------
+// -------------------- price parsing (FIXED) --------------------
+
 function parsePrice(x) {
   if (x === null || x === undefined) return null;
   if (typeof x === "number") return x;
@@ -270,6 +269,9 @@ function findSheetWithHeader(wb, fileLabel, { raw = true } = {}) {
     const h = findHeaderInAoA(aoa);
     if (h !== -1) return { sheetName, headerRow: h };
   }
+
+  console.error(`\n[${fileLabel}] No header found. Sheets were:`);
+  wb.SheetNames.forEach((s) => console.error("  - " + s));
   return null;
 }
 
@@ -328,7 +330,7 @@ function normalizeTariffForKey(tariffRaw, { source }) {
   if (source === "export") {
     const up = t.toUpperCase();
     if (TARIFF_EQUIV_EXPORT_TO_MASTER[up]) return TARIFF_EQUIV_EXPORT_TO_MASTER[up];
-    return t;
+    return up;
   }
 
   return t;
@@ -368,7 +370,9 @@ function loadTableMapFromWorkbook({
   }
 
   const seatCols = collectSeatCols(aoa, h, audCol, tarCol, 5);
-  if (!seatCols.length) throw new Error(`No seat columns found in ${filePath} (sheet: ${sheetName}).`);
+  if (!seatCols.length) {
+    throw new Error(`No seat columns found in ${filePath} (sheet: ${sheetName}).`);
+  }
 
   let currentAud = "";
   const map = new Map();
@@ -414,7 +418,7 @@ function loadTableMapFromWorkbook({
   return map;
 }
 
-// -------------------- comparison (SUMMARY COUNTS) --------------------
+// -------------------- comparison (summary) --------------------
 
 function compareSummary(currency, masterPath, masterTabName, exportPath) {
   const masterMap = loadTableMapFromWorkbook({
@@ -447,75 +451,78 @@ function compareSummary(currency, masterPath, masterTabName, exportPath) {
     if (!masterMap.has(k)) extra++;
   }
 
-  return { currency, missing, extra, mismatches, error: null };
+  return { currency, missing, extra, mismatches };
 }
 
-function safeCompareSummary(currency, masterPath, masterTabName, exportPath) {
-  try {
-    return compareSummary(currency, masterPath, masterTabName, exportPath);
-  } catch (e) {
-    return {
-      currency,
-      missing: 0,
-      extra: 0,
-      mismatches: 0,
-      error: e && e.message ? e.message : String(e),
-    };
-  }
-}
-
-// -------------------- multi-master file matching --------------------
+// -------------------- multi-master matching helpers --------------------
 
 function getMasterTag(filename) {
-  const m = String(filename).match(/(M\d{1,})/i); // find M### anywhere
+  const m = String(filename).match(/^(M\d{1,})/i);
   return m ? m[1].toUpperCase() : null;
 }
 
-// token boundary match so "us" doesn't match "status"
 function hasToken(filenameLower, token) {
+  // boundary match: separators around token => prevents "status" matching "us"
   const re = new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "i");
   return re.test(filenameLower);
 }
 
-function isExportCandidate(f, masterTag) {
-  const lower = f.toLowerCase();
-  if (!f.toUpperCase().startsWith(masterTag)) return false;
-  if (!lower.endsWith(".xls")) return false;
-  return true;
-}
-
-function findExports(files, masterTag, tokens) {
+function findExportsForMaster(files, masterTag, tokens) {
   const mt = masterTag.toUpperCase();
   return files.filter((f) => {
-    if (!isExportCandidate(f, mt)) return false;
     const lower = f.toLowerCase();
+
+    // exports must start with same master tag
+    if (!f.toUpperCase().startsWith(mt)) return false;
+
+    // exports are .xls (html) usually; allow .xlsx exports too if needed
+    if (!(lower.endsWith(".xls") || lower.endsWith(".xlsx"))) return false;
+
+    // avoid picking the master xlsx as an export
+    if (lower.endsWith(".xlsx") && /^m\d+/i.test(f) && !lower.includes("rates_table")) return false;
+
     return tokens.some((t) => hasToken(lower, t));
   });
 }
 
-// -------------------- output formatting (YOUR FORMAT) --------------------
+function safeCompare(currency, masterPath, masterTabName, exportPath) {
+  try {
+    const r = compareSummary(currency, masterPath, masterTabName, exportPath);
+    return { ...r, ok: true, error: "" };
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    return { currency, missing: 0, extra: 0, mismatches: 0, ok: false, error: msg };
+  }
+}
 
-function printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSum, mxnSum }) {
-  console.log(`\nMASTER: ${masterFile}`);
-  console.log(`USD  : ${usdFile}`);
-  console.log(`CAD  : ${cadFile}`);
-  console.log(`MXN  : ${mxnFile}`);
+// -------------------- printing --------------------
 
-  const line = (r) => {
-    if (r.error) {
-      return `  ${r.currency} -> ERROR: ${r.error}`;
-    }
-    return `  ${r.currency} -> Missing in export :${r.missing} | Extra in export :${r.extra} | Mismatches:${r.mismatches}`;
-  };
+function printMasterHeader(masterTag, masterFile, usdFile, cadFile, mxnFile) {
+  console.log("\n==============================================");
+  console.log(`MASTER: ${masterTag}`);
+  console.log("master:", masterFile);
+  console.log("usd   :", usdFile || "(missing)");
+  console.log("cad   :", cadFile || "(missing)");
+  console.log("mxn   :", mxnFile || "(missing)");
+  console.log("----------------------------------------------");
+}
 
-  console.log(line(usdSum));
-  console.log(line(cadSum));
-  console.log(line(mxnSum));
+function printSummaryLine(r) {
+  const status = r.ok ? "OK" : "ERROR";
+  console.log(
+    `${r.currency.padEnd(3)} | ${status.padEnd(5)} | Missing: ${String(r.missing).padStart(5)} | Extra: ${String(
+      r.extra
+    ).padStart(5)} | Mismatch: ${String(r.mismatches).padStart(5)}${r.ok ? "" : " | " + r.error}`
+  );
 }
 
 // -------------------- main --------------------
 
 function main() {
+  console.log("=== SUMMARY-ONLY MULTI-MASTER RUNNING ===");
+  console.log("SCRIPT:", __filename);
+  console.log("Compare folder:", BASE_DIR);
+
   if (!fs.existsSync(BASE_DIR)) {
     console.error("Compare folder not found:", BASE_DIR);
     process.exit(1);
@@ -523,19 +530,16 @@ function main() {
 
   const files = fs.readdirSync(BASE_DIR);
 
-  const masterFiles = files.filter((f) => {
-    const lower = f.toLowerCase();
-    return lower.endsWith(".xlsx") && /m\d+/i.test(f);
-  });
-
+  // masters are .xlsx that start with M###
+  const masterFiles = files.filter((f) => /^m\d+/i.test(f) && f.toLowerCase().endsWith(".xlsx"));
   if (!masterFiles.length) {
-    console.error("\nNo master .xlsx files found containing M###.");
+    console.error("\nNo master .xlsx files found starting with M (example: M104...xlsx).");
     console.error("Files found:");
     files.forEach((f) => console.error("  - " + f));
     process.exit(1);
   }
 
-  // sort by numeric M
+  // sort masters by M number
   masterFiles.sort((a, b) => {
     const ta = getMasterTag(a) || "";
     const tb = getMasterTag(b) || "";
@@ -544,44 +548,85 @@ function main() {
     return (na || 0) - (nb || 0);
   });
 
-  let processed = 0;
-  let skipped = 0;
+  // grand totals across ALL masters
+  const grand = {
+    mastersProcessed: 0,
+    mastersSkipped: 0,
+    USD: { missing: 0, extra: 0, mismatches: 0, errors: 0 },
+    CAD: { missing: 0, extra: 0, mismatches: 0, errors: 0 },
+    MXN: { missing: 0, extra: 0, mismatches: 0, errors: 0 },
+  };
 
   for (const masterFile of masterFiles) {
     const masterTag = getMasterTag(masterFile);
-    if (!masterTag) {
-      skipped++;
+    if (!masterTag) continue;
+
+    const usdMatches = findExportsForMaster(files, masterTag, ["usd", "us"]);
+    const cadMatches = findExportsForMaster(files, masterTag, ["cad"]);
+    const mxnMatches = findExportsForMaster(files, masterTag, ["mex", "mxn"]);
+
+    const problems = [];
+    if (usdMatches.length !== 1) problems.push(`USD expected 1, found ${usdMatches.length}`);
+    if (cadMatches.length !== 1) problems.push(`CAD expected 1, found ${cadMatches.length}`);
+    if (mxnMatches.length !== 1) problems.push(`MXN expected 1, found ${mxnMatches.length}`);
+
+    const usdFile = usdMatches[0] || "";
+    const cadFile = cadMatches[0] || "";
+    const mxnFile = mxnMatches[0] || "";
+
+    printMasterHeader(masterTag, masterFile, usdFile, cadFile, mxnFile);
+
+    if (problems.length) {
+      console.log("SKIPPED (exports not clean):");
+      problems.forEach((p) => console.log("  - " + p));
+      grand.mastersSkipped++;
       continue;
     }
-
-    const usdMatches = findExports(files, masterTag, ["usd", "us"]);
-    const cadMatches = findExports(files, masterTag, ["cad"]);
-    const mexMatches = findExports(files, masterTag, ["mex", "mxn"]);
-
-    if (usdMatches.length !== 1 || cadMatches.length !== 1 || mexMatches.length !== 1) {
-      // keep it simple: skip masters that don't have clean exports
-      skipped++;
-      continue;
-    }
-
-    const usdFile = usdMatches[0];
-    const cadFile = cadMatches[0];
-    const mxnFile = mexMatches[0];
 
     const masterPath = path.join(BASE_DIR, masterFile);
     const usdPath = path.join(BASE_DIR, usdFile);
     const cadPath = path.join(BASE_DIR, cadFile);
     const mxnPath = path.join(BASE_DIR, mxnFile);
 
-    const usdSum = safeCompareSummary("USD", masterPath, "USD", usdPath);
-    const cadSum = safeCompareSummary("CAD", masterPath, "CAD", cadPath);
-    const mxnSum = safeCompareSummary("MXN", masterPath, "MXN", mxnPath);
+    const rUSD = safeCompare("USD", masterPath, "USD", usdPath);
+    const rCAD = safeCompare("CAD", masterPath, "CAD", cadPath);
+    const rMXN = safeCompare("MXN", masterPath, "MXN", mxnPath);
 
-    printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSum, mxnSum });
-    processed++;
+    [rUSD, rCAD, rMXN].forEach(printSummaryLine);
+
+    // roll up grand totals
+    const roll = (cur, r) => {
+      if (!r.ok) {
+        grand[cur].errors += 1;
+        return;
+      }
+      grand[cur].missing += r.missing;
+      grand[cur].extra += r.extra;
+      grand[cur].mismatches += r.mismatches;
+    };
+    roll("USD", rUSD);
+    roll("CAD", rCAD);
+    roll("MXN", rMXN);
+
+    grand.mastersProcessed++;
   }
 
-  console.log(`\nDone. Processed masters: ${processed}, Skipped masters: ${skipped}`);
+  console.log("\n==============================================");
+  console.log("ALL-MASTERS SUMMARY");
+  console.log("----------------------------------------------");
+  console.log(`Masters processed: ${grand.mastersProcessed}`);
+  console.log(`Masters skipped  : ${grand.mastersSkipped}`);
+  console.log("----------------------------------------------");
+  console.log(
+    `USD | Missing: ${grand.USD.missing} | Extra: ${grand.USD.extra} | Mismatch: ${grand.USD.mismatches} | Errors: ${grand.USD.errors}`
+  );
+  console.log(
+    `CAD | Missing: ${grand.CAD.missing} | Extra: ${grand.CAD.extra} | Mismatch: ${grand.CAD.mismatches} | Errors: ${grand.CAD.errors}`
+  );
+  console.log(
+    `MXN | Missing: ${grand.MXN.missing} | Extra: ${grand.MXN.extra} | Mismatch: ${grand.MXN.mismatches} | Errors: ${grand.MXN.errors}`
+  );
+  console.log("==============================================\n");
 }
 
 main();
