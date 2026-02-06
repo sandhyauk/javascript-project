@@ -3,9 +3,9 @@
  * MULTI-MASTER RATE TABLE COMPARER (ROBUST)
  * - Reads MANY master files from Compare folder:  M###*.xlsx
  * - For EACH master M###, finds 3 export files that start with SAME M### and contain:
- *     USD: "usd" or "us"
+ *     USD: "usd" 
  *     CAD: "cad"
- *     MXN: "mex" or "mxn"
+ *     MXN: "mex"
  *   (token match, case-insensitive; avoids false matches like "status")
  * - Generates ONE CSV PER MASTER even if one currency fails:
  *     Compare\M001-rates-report.csv
@@ -13,7 +13,7 @@
  *     Compare\M104-rates-report.csv
  *
  * Run from anywhere:
- *   node compare-ratesmulti.js
+ *   node comrate.js
  */
 
 const fs = require("fs");
