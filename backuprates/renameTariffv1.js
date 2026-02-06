@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require("fs");
 const path = require("path");
+const XLSX = require("xlsx");
 
 const SOURCE_DIR = "C:/Users/san8577/PlaywrightRepos/javascript/Compare/convert";
 const DEST_DIR   = "C:/Users/san8577/PlaywrightRepos/javascript/Compare";
@@ -40,29 +41,28 @@ function findRate(files, n) {
   return files.find((f) => isExcelish(f.name) && re.test(f.name)) || null;
 }
 
+function convertToXls(srcPath, outPath) {
+  const wb = XLSX.readFile(srcPath, { cellDates: true, raw: false });
+  XLSX.writeFile(wb, outPath, { bookType: "biff8", compression: false });
+}
+
+function copyFile(srcPath, outPath) {
+  fs.copyFileSync(srcPath, outPath);
+}
+
+function safeDelete(p) {
+  try { fs.unlinkSync(p); } catch (e) { /* ignore */ }
+}
+
 function ensureXlsxName(originalName, mNum) {
+  // If it already ends with .xlsx keep it.
+  // If it ends with .xlsm or .xls or has no extension, force .xlsx
   const ext = path.extname(originalName).toLowerCase();
   const base = ext ? path.parse(originalName).name : originalName;
 
+  // Use original base name but ensure it includes the M### (just in case)
   const finalBase = /\bM\d{3}\b/i.test(base) ? base : `${mNum} ${base}`.trim();
   return `${finalBase}.xlsx`;
-}
-
-function ensureXlsName(originalName) {
-  // keep base name; force .xls
-  const ext = path.extname(originalName);
-  const base = ext ? path.parse(originalName).name : originalName;
-  return `${base}.xls`;
-}
-
-function moveFile(srcPath, destPath) {
-  // rename = move on same drive; if it fails (rare), fallback to copy+delete
-  try {
-    fs.renameSync(srcPath, destPath);
-  } catch (e) {
-    fs.copyFileSync(srcPath, destPath);
-    fs.unlinkSync(srcPath);
-  }
 }
 
 function main() {
@@ -92,33 +92,40 @@ function main() {
     process.exit(1);
   }
 
-  // MASTER stays .xlsx in Compare
+  // ✅ MASTER stays as .xlsx
   const masterOutName = ensureXlsxName(master.name, mNum);
   const outMaster = path.join(DEST_DIR, masterOutName);
 
-  // RATES: do NOT open/resave; just rename/move as-is
-  // (We keep their content unchanged; we only control destination filename.)
-  const outUsd = path.join(DEST_DIR, `${mNum} Rates_table usd${path.extname(r1.name) || ".xls"}`);
-  const outCad = path.join(DEST_DIR, `${mNum} Rates_table cad${path.extname(r2.name) || ".xls"}`);
-  const outMex = path.join(DEST_DIR, `${mNum} Rates_table mex${path.extname(r3.name) || ".xls"}`);
+  // ✅ Rates become .xls
+  const outUsd = path.join(DEST_DIR, `${mNum} Rates_table usd.xls`);
+  const outCad = path.join(DEST_DIR, `${mNum} Rates_table cad.xls`);
+  const outMex = path.join(DEST_DIR, `${mNum} Rates_table mex.xls`);
 
   console.log("Using files:");
   console.log(`MASTER: ${master.name} -> ${path.basename(outMaster)} (xlsx)`);
-  console.log(`USD   : ${r1.name} -> ${path.basename(outUsd)} (no resave)`);
-  console.log(`CAD   : ${r2.name} -> ${path.basename(outCad)} (no resave)`);
-  console.log(`MEX   : ${r3.name} -> ${path.basename(outMex)} (no resave)`);
+  console.log(`USD   : ${r1.name} -> ${path.basename(outUsd)} (xls)`);
+  console.log(`CAD   : ${r2.name} -> ${path.basename(outCad)} (xls)`);
+  console.log(`MEX   : ${r3.name} -> ${path.basename(outMex)} (xls)`);
   console.log("");
 
-  // Move files out of convert folder (so originals are removed automatically)
-  moveFile(master.full, outMaster);
-  moveFile(r1.full, outUsd);
-  moveFile(r2.full, outCad);
-  moveFile(r3.full, outMex);
+  // 1) Copy master as-is (keep xlsx)
+  copyFile(master.full, outMaster);
+
+  // 2) Convert rates to .xls (97-2003)
+  convertToXls(r1.full, outUsd);
+  convertToXls(r2.full, outCad);
+  convertToXls(r3.full, outMex);
+
+  // 3) Remove originals from convert folder
+  safeDelete(master.full);
+  safeDelete(r1.full);
+  safeDelete(r2.full);
+  safeDelete(r3.full);
 
   console.log("✅ Done.");
-  console.log("✅ Master moved to Compare as .xlsx (no resave).");
-  console.log("✅ Rate tables moved/renamed to Compare (no resave).");
-  console.log("🗑️ Nothing left behind in convert (moved).");
+  console.log("✅ Master kept as .xlsx in Compare.");
+  console.log("✅ Rates saved as .xls in Compare.");
+  console.log("🗑️ Originals removed from convert.");
 }
 
 main();

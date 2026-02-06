@@ -13,7 +13,7 @@
  *      MXN: "mex" or "mxn"
  *
  * Run:
- *   node compare-rates-summary.js
+ *   node ratesum.js
  */
 
 const fs = require("fs");
@@ -35,28 +35,11 @@ function redIfNonZero(n) {
 }
 
 // ===================== TARIFF MAPPING =====================
-const TARIFF_EQUIV_MASTER_TO_EXPORT = {
-  // ---------- USD/CAD mappings ----------
-  GSCWCH1: "GSFCWCH1",
-  GSCWCH1C: "GSFCWC1C",
-  GSCWCH2: "GSFCWCH2",
-  GSCWCH2C: "GSFCWC2C",
-  GSCWCH3: "GSFCWCH3",
-  GSCWCH3C: "GSFCWC3C",
-  GSCWCH4: "GSFCWCH4",
-  GSCWCH4C: "GSFCWC4C",
+// You said master + export now have the SAME tariff codes, so mapping not needed.
+// IMPORTANT: keep this defined (empty) so the reverse-map build does not crash.
+const TARIFF_EQUIV_MASTER_TO_EXPORT = {};
 
-  // ---------- MXN (Mexico export) weird variants ----------
-  GSMWCH1: "GSFMWCH1",
-  GSMWCH1C: "GSFMWC1C",
-  GSMWCH2: "GSFMWCH2",
-  GSMWCH2C: "GSFMWC2C",
-  GSMWCH3: "GSFMWCH3",
-  GSMWCH3C: "GSFMWC3C",
-  GSMWCH4: "GSFMWCH4",
-  GSMWCH4C: "GSFMWC4C",
-};
-
+// Build reverse map (EXPORT tariff -> MASTER tariff). Empty if mapping empty.
 const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
   Object.entries(TARIFF_EQUIV_MASTER_TO_EXPORT).map(([m, e]) => [
     String(e).toUpperCase(),
@@ -69,7 +52,12 @@ const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
 function isProbablyHtmlFile(filePath) {
   try {
     const head = fs.readFileSync(filePath, "utf8").slice(0, 2500).toLowerCase();
-    return head.includes("<table") || head.includes("<html") || head.includes("<tr") || head.includes("<td");
+    return (
+      head.includes("<table") ||
+      head.includes("<html") ||
+      head.includes("<tr") ||
+      head.includes("<td")
+    );
   } catch {
     return false;
   }
@@ -265,7 +253,13 @@ function looksLikeAudCell(t) {
 
 function looksLikeTariffCell(t) {
   t = (t || "").toLowerCase();
-  return t.includes("tariff") || t.includes("rate") || t.includes("price level") || t.includes("price") || t.includes("level");
+  return (
+    t.includes("tariff") ||
+    t.includes("rate") ||
+    t.includes("price level") ||
+    (t.includes("price") && !t.includes("all prices")) ||
+    t.includes("level")
+  );
 }
 
 function findHeaderInAoA(aoa) {
@@ -514,11 +508,8 @@ function printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSu
   console.log(`MXN  : ${mxnFile}`);
 
   const line = (r) => {
-    if (r.error) {
-      return `  ${r.currency} -> ERROR: ${r.error}`;
-    }
+    if (r.error) return `  ${r.currency} -> ERROR: ${r.error}`;
 
-    // ONLY THE NUMBERS turn red if non-zero
     return `  ${r.currency} -> Missing in export :${redIfNonZero(r.missing)} | Extra in export :${redIfNonZero(
       r.extra
     )} | Mismatches:${redIfNonZero(r.mismatches)}`;

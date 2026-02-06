@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * MULTI-MASTER RATE TABLE COMPARER (ROBUST) - NO TARIFF MAPPING NEEDED
+ * MULTI-MASTER RATE TABLE COMPARER (ROBUST)
  * - Reads MANY master files from Compare folder:  M###*.xlsx
  * - For EACH master M###, finds 3 export files that start with SAME M### and contain:
- *     USD: "usd"
+ *     USD: "usd" 
  *     CAD: "cad"
  *     MXN: "mex"
  *   (token match, case-insensitive; avoids false matches like "status")
@@ -12,7 +12,7 @@
  *     Compare\M096-rates-report.csv
  *     Compare\M104-rates-report.csv
  *
- * Run:
+ * Run from anywhere:
  *   node comrate.js
  */
 
@@ -21,7 +21,6 @@ const path = require("path");
 const XLSX = require("xlsx");
 
 const BASE_DIR = "C:/Users/san8577/PlaywrightRepos/javascript/Compare";
-
 // ===================== ANSI COLOR (no extra installs) =====================
 const ANSI = {
   red: "\x1b[31m",
@@ -36,10 +35,29 @@ function colorize(color, text) {
   return `${color}${text}${ANSI.reset}`;
 }
 
+
 // ===================== TARIFF MAPPING =====================
-// You said master + export now have the SAME tariff codes, so mapping not needed.
-// IMPORTANT: keep this defined (empty) so the reverse-map build does not crash.
-const TARIFF_EQUIV_MASTER_TO_EXPORT = {};
+const TARIFF_EQUIV_MASTER_TO_EXPORT = {
+  // ---------- USD/CAD mappings ----------
+  GSCWCH1: "GSFCWCH1",
+  GSCWCH1C: "GSFCWC1C",
+  GSCWCH2: "GSFCWCH2",
+  GSCWCH2C: "GSFCWC2C",
+  GSCWCH3: "GSFCWCH3",
+  GSCWCH3C: "GSFCWC3C",
+  GSCWCH4: "GSFCWCH4",
+  GSCWCH4C: "GSFCWC4C",
+
+  // ---------- MXN (Mexico export) variants ----------
+  GSMWCH1: "GSFMWCH1",
+  GSMWCH1C: "GSFMWC1C",
+  GSMWCH2: "GSFMWCH2",
+  GSMWCH2C: "GSFMWC2C",
+  GSMWCH3: "GSFMWCH3",
+  GSMWCH3C: "GSFMWC3C",
+  GSMWCH4: "GSFMWCH4",
+  GSMWCH4C: "GSFMWC4C",
+};
 
 const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
   Object.entries(TARIFF_EQUIV_MASTER_TO_EXPORT).map(([m, e]) => [
@@ -467,16 +485,22 @@ function printCurrencyReport(r) {
   }
 
   const showList = (title, arr, formatter, highlightColor) => {
+    // Always print the title
     console.log(`\n${title}:`);
+
+    // If empty, show "(none)" in green so it's obvious there's nothing to review
     if (!arr.length) {
       console.log(colorize(ANSI.green, "  (none)"));
       return;
     }
+
+    // If there are items, highlight EVERY line in the section
     for (const x of arr) {
       console.log(colorize(highlightColor, `  ${formatter(x)}`));
     }
   };
 
+  // Highlight blocks when they contain rows
   showList(
     "MISSING IN EXPORT",
     r.miss,
@@ -500,6 +524,7 @@ function printCurrencyReport(r) {
 
   console.log(colorize(ANSI.gray, "\n=================================================="));
 }
+
 
 // -------------------- CSV OUTPUT --------------------
 
@@ -546,6 +571,7 @@ function isExportCandidate(f, masterTag) {
   if (!(lower.endsWith(".xls") || lower.endsWith(".xlsx"))) return false;
 
   // Avoid treating the master as an export:
+  // if it's .xlsx and does NOT look like rates_table export, skip it
   if (lower.endsWith(".xlsx") && !lower.includes("rates_table")) return false;
 
   return true;
@@ -572,7 +598,7 @@ function safeCompare(currency, masterPath, masterTabName, exportPath) {
 // -------------------- main --------------------
 
 function main() {
-  console.log("=== MULTI MASTER VERSION RUNNING (comrate.js) ===");
+  console.log("=== MULTI MASTER VERSION RUNNING (compare-ratesmulti.js) ===");
   console.log("SCRIPT:", __filename);
   console.log("Compare folder:", BASE_DIR);
 
@@ -613,10 +639,9 @@ function main() {
     const masterTag = getMasterTag(masterFile);
     if (!masterTag) continue;
 
-    // you said tokens are usd/cad/mex (no "us"/"mxn" needed now)
-    const usdMatches = findExports(files, masterTag, ["usd"]);
+    const usdMatches = findExports(files, masterTag, ["usd", "us"]);
     const cadMatches = findExports(files, masterTag, ["cad"]);
-    const mexMatches = findExports(files, masterTag, ["mex"]);
+    const mexMatches = findExports(files, masterTag, ["mex", "mxn"]);
 
     console.log("\n----------------------------------------------");
     console.log(`SET ${masterTag}`);
@@ -626,9 +651,9 @@ function main() {
     console.log("  mexMatches:", mexMatches.length, mexMatches);
 
     const problems = [];
-    if (usdMatches.length !== 1) problems.push(`USD(usd) expected 1, found ${usdMatches.length}`);
+    if (usdMatches.length !== 1) problems.push(`USD(usd/us) expected 1, found ${usdMatches.length}`);
     if (cadMatches.length !== 1) problems.push(`CAD(cad) expected 1, found ${cadMatches.length}`);
-    if (mexMatches.length !== 1) problems.push(`MXN(mex) expected 1, found ${mexMatches.length}`);
+    if (mexMatches.length !== 1) problems.push(`MXN(mex/mxn) expected 1, found ${mexMatches.length}`);
 
     if (problems.length) {
       console.error(`Skipping ${masterTag} because exports are not clean:`);
