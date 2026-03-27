@@ -35,8 +35,11 @@ function redIfNonZero(n) {
 }
 
 // ===================== TARIFF MAPPING =====================
+// You said master + export now have the SAME tariff codes, so mapping not needed.
+// IMPORTANT: keep this defined (empty) so the reverse-map build does not crash.
 const TARIFF_EQUIV_MASTER_TO_EXPORT = {};
 
+// Build reverse map (EXPORT tariff -> MASTER tariff). Empty if mapping empty.
 const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
   Object.entries(TARIFF_EQUIV_MASTER_TO_EXPORT).map(([m, e]) => [
     String(e).toUpperCase(),
@@ -194,7 +197,6 @@ function seatKey(x) {
 }
 
 // -------------------- price parsing --------------------
-
 function parsePrice(x) {
   if (x === null || x === undefined) return null;
   if (typeof x === "number") return x;
@@ -277,30 +279,11 @@ function findSheetWithHeader(wb, fileLabel, { raw = true } = {}) {
   return null;
 }
 
-// -------------------- seat header collection --------------------
+// -------------------- seat header collection (multi-row) --------------------
 
 function looksLikeSeatLabel(v) {
   const s = seatKey(v);
   if (!s) return false;
-
-  const blocked = new Set([
-    "AUD",
-    "AUDCAT",
-    "AUDIENCE",
-    "AUDIENCECATEGORY",
-    "TARIFF",
-    "RATE",
-    "PRICE",
-    "PRICELEVEL",
-    "LEVEL",
-    "SEAT",
-    "SEATCATEGORY",
-    "SEATCATEGORIES",
-    "CATEGORY",
-    "CATEGORIES",
-    "ALLPRICES",
-  ]);
-  if (blocked.has(s)) return false;
 
   if (/^CAT\d(H)?$/.test(s)) return true;
   if (/^PSUPP[A-D]$/.test(s)) return true;
@@ -308,16 +291,13 @@ function looksLikeSeatLabel(v) {
   if (/^(ES|AM)(-\d)?$/.test(s)) return true;
   if (/^(TECH|YP)$/.test(s)) return true;
 
-  // dynamic categories like OVCAT1, VIPWH, HOSWH, HOSWAP, etc.
-  if (/^[A-Z][A-Z0-9-]{2,}$/.test(s)) return true;
-
   return false;
 }
 
 function collectSeatCols(aoa, headerRowIndex, audCol, tarCol, scanRows = 5) {
   const seatColsMap = new Map();
 
-  for (let rr = headerRowIndex; rr <= headerRowIndex + scanRows; rr++) {
+  for (let rr = headerRowIndex + 1; rr <= headerRowIndex + scanRows; rr++) {
     const row = aoa[rr] || [];
     for (let c = 0; c < row.length; c++) {
       if (c === audCol || c === tarCol) continue;
@@ -330,7 +310,7 @@ function collectSeatCols(aoa, headerRowIndex, audCol, tarCol, scanRows = 5) {
   return [...seatColsMap.entries()].sort((a, b) => a[0] - b[0]);
 }
 
-// -------------------- master stop condition --------------------
+// -------------------- master stop condition (first table only) --------------------
 
 function looksLikeNewSectionRow(row) {
   const joined = (row || []).map((c) => normLower(c)).join(" | ");
@@ -341,17 +321,6 @@ function looksLikeNewSectionRow(row) {
 
   const cells = (row || []).map((c) => normLower(c));
   if (cells.some(looksLikeAudCell) && cells.some(looksLikeTariffCell)) return true;
-
-  return false;
-}
-
-function rowLooksLikeHeaderContinuation(row, audCol, tarCol) {
-  const aud = normLower(row?.[audCol]);
-  const tariff = normLower(row?.[tarCol]);
-  const joined = (row || []).map((c) => normLower(c)).join(" | ");
-
-  if (looksLikeAudCell(aud) || looksLikeTariffCell(tariff)) return true;
-  if (joined.includes("seat categories")) return true;
 
   return false;
 }
@@ -413,10 +382,7 @@ function loadTableMapFromWorkbook({
   let seenData = 0;
   let blankStreak = 0;
 
-  let startRow = h + 1;
-  if (source === "export") startRow = h + 2;
-
-  for (let r = startRow; r < aoa.length; r++) {
+  for (let r = h + 2; r < aoa.length; r++) {
     const row = aoa[r] || [];
 
     if (stopAfterFirstTable && seenData > 0 && looksLikeNewSectionRow(row)) break;
@@ -428,8 +394,6 @@ function loadTableMapFromWorkbook({
     } else {
       blankStreak = 0;
     }
-
-    if (rowLooksLikeHeaderContinuation(row, audCol, tarCol)) continue;
 
     const audRaw = norm(row[audCol]);
     if (audRaw) currentAud = audRaw;
@@ -509,10 +473,11 @@ function safeCompareSummary(currency, masterPath, masterTabName, exportPath) {
 // -------------------- multi-master file matching --------------------
 
 function getMasterTag(filename) {
-  const m = String(filename).match(/(M\d{1,})/i);
+  const m = String(filename).match(/(M\d{1,})/i); // find M### anywhere
   return m ? m[1].toUpperCase() : null;
 }
 
+// token boundary match so "us" doesn't match "status"
 function hasToken(filenameLower, token) {
   const re = new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "i");
   return re.test(filenameLower);
@@ -534,7 +499,7 @@ function findExports(files, masterTag, tokens) {
   });
 }
 
-// -------------------- output formatting --------------------
+// -------------------- output formatting (YOUR FORMAT) --------------------
 
 function printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSum, mxnSum }) {
   console.log(`\nMASTER: ${masterFile}`);
@@ -577,6 +542,7 @@ function main() {
     process.exit(1);
   }
 
+  // sort by numeric M
   masterFiles.sort((a, b) => {
     const ta = getMasterTag(a) || "";
     const tb = getMasterTag(b) || "";

@@ -37,8 +37,6 @@ function colorize(color, text) {
 }
 
 // ===================== TARIFF MAPPING =====================
-// You said master + export now have the SAME tariff codes, so mapping not needed.
-// IMPORTANT: keep this defined (empty) so the reverse-map build does not crash.
 const TARIFF_EQUIV_MASTER_TO_EXPORT = {};
 
 const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
@@ -47,7 +45,6 @@ const TARIFF_EQUIV_EXPORT_TO_MASTER = Object.fromEntries(
     String(m).toUpperCase(),
   ])
 );
-// =========================================================
 
 // -------------------- HTML helpers --------------------
 
@@ -84,7 +81,6 @@ function getAttrInt(tag, attrName, defaultValue = 1) {
   return Number.isFinite(n) && n > 0 ? n : defaultValue;
 }
 
-/** Parse ONE <table> to AoA with basic colspan/rowspan. */
 function htmlSingleTableToAoA(tableHtml) {
   const rows = [];
   let spanMap = [];
@@ -142,7 +138,6 @@ function htmlSingleTableToAoA(tableHtml) {
   return rows;
 }
 
-/** Parse ALL <table> in HTML into pseudo workbook (multiple sheets). */
 function htmlTablesToPseudoWorkbook(html) {
   const tables = [];
   const tableRe = /<table[^>]*>[\s\S]*?<\/table>/gi;
@@ -253,7 +248,13 @@ function looksLikeAudCell(t) {
 
 function looksLikeTariffCell(t) {
   t = (t || "").toLowerCase();
-  return t.includes("tariff") || t.includes("rate") || t.includes("price level") || t.includes("price") || t.includes("level");
+  return (
+    t.includes("tariff") ||
+    t.includes("rate") ||
+    t.includes("price level") ||
+    (t.includes("price") && !t.includes("all prices")) ||
+    t.includes("level")
+  );
 }
 
 function findHeaderInAoA(aoa) {
@@ -276,11 +277,30 @@ function findSheetWithHeader(wb, fileLabel, { raw = true } = {}) {
   return null;
 }
 
-// -------------------- seat header collection (multi-row) --------------------
+// -------------------- seat header collection --------------------
 
 function looksLikeSeatLabel(v) {
   const s = seatKey(v);
   if (!s) return false;
+
+  const blocked = new Set([
+    "AUD",
+    "AUDCAT",
+    "AUDIENCE",
+    "AUDIENCECATEGORY",
+    "TARIFF",
+    "RATE",
+    "PRICE",
+    "PRICELEVEL",
+    "LEVEL",
+    "SEAT",
+    "SEATCATEGORY",
+    "SEATCATEGORIES",
+    "CATEGORY",
+    "CATEGORIES",
+    "ALLPRICES",
+  ]);
+  if (blocked.has(s)) return false;
 
   if (/^CAT\d(H)?$/.test(s)) return true;
   if (/^PSUPP[A-D]$/.test(s)) return true;
@@ -288,13 +308,16 @@ function looksLikeSeatLabel(v) {
   if (/^(ES|AM)(-\d)?$/.test(s)) return true;
   if (/^(TECH|YP)$/.test(s)) return true;
 
+  // dynamic categories like OVCAT1, HOSWH, HOSWAP, VIPWH, etc.
+  if (/^[A-Z][A-Z0-9-]{2,}$/.test(s)) return true;
+
   return false;
 }
 
 function collectSeatCols(aoa, headerRowIndex, audCol, tarCol, scanRows = 5) {
   const seatColsMap = new Map();
 
-  for (let rr = headerRowIndex + 1; rr <= headerRowIndex + scanRows; rr++) {
+  for (let rr = headerRowIndex; rr <= headerRowIndex + scanRows; rr++) {
     const row = aoa[rr] || [];
     for (let c = 0; c < row.length; c++) {
       if (c === audCol || c === tarCol) continue;
@@ -318,6 +341,18 @@ function looksLikeNewSectionRow(row) {
 
   const cells = (row || []).map((c) => normLower(c));
   if (cells.some(looksLikeAudCell) && cells.some(looksLikeTariffCell)) return true;
+
+  return false;
+}
+
+// NEW: detect leftover header rows so we do not parse them as data
+function rowLooksLikeHeaderContinuation(row, audCol, tarCol) {
+  const aud = normLower(row?.[audCol]);
+  const tariff = normLower(row?.[tarCol]);
+  const joined = (row || []).map((c) => normLower(c)).join(" | ");
+
+  if (looksLikeAudCell(aud) || looksLikeTariffCell(tariff)) return true;
+  if (joined.includes("seat categories")) return true;
 
   return false;
 }
@@ -379,7 +414,12 @@ function loadTableMapFromWorkbook({
   let seenData = 0;
   let blankStreak = 0;
 
-  for (let r = h + 2; r < aoa.length; r++) {
+  // export files have a real 2-row header, so start at h + 2
+  // master files also have header text under the first header row
+  let startRow = h + 1;
+  if (source === "export") startRow = h + 2;
+
+  for (let r = startRow; r < aoa.length; r++) {
     const row = aoa[r] || [];
 
     if (stopAfterFirstTable && seenData > 0 && looksLikeNewSectionRow(row)) break;
@@ -391,6 +431,9 @@ function loadTableMapFromWorkbook({
     } else {
       blankStreak = 0;
     }
+
+    // skip any leftover header rows
+    if (rowLooksLikeHeaderContinuation(row, audCol, tarCol)) continue;
 
     const audRaw = norm(row[audCol]);
     if (audRaw) currentAud = audRaw;
@@ -526,13 +569,11 @@ function writeCsv(results, csvPath) {
 
 // -------------------- multi-master helpers --------------------
 
-// Find M### anywhere in the filename (not just at the start)
 function getMasterTag(filename) {
   const m = String(filename).match(/(M\d{1,})/i);
   return m ? m[1].toUpperCase() : null;
 }
 
-// Token match with boundaries so "us" doesn't match "status"
 function hasToken(filenameLower, token) {
   const re = new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, "i");
   return re.test(filenameLower);
@@ -542,10 +583,8 @@ function isExportCandidate(f, masterTag) {
   const lower = f.toLowerCase();
   if (!f.toUpperCase().startsWith(masterTag)) return false;
 
-  // exports can be .xls (html) or sometimes .xlsx
   if (!(lower.endsWith(".xls") || lower.endsWith(".xlsx"))) return false;
 
-  // Avoid treating the master as an export:
   if (lower.endsWith(".xlsx") && !lower.includes("rates_table")) return false;
 
   return true;
@@ -613,7 +652,6 @@ function main() {
     const masterTag = getMasterTag(masterFile);
     if (!masterTag) continue;
 
-    // you said tokens are usd/cad/mex (no "us"/"mxn" needed now)
     const usdMatches = findExports(files, masterTag, ["usd"]);
     const cadMatches = findExports(files, masterTag, ["cad"]);
     const mexMatches = findExports(files, masterTag, ["mex"]);
