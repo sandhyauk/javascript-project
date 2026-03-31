@@ -11,6 +11,12 @@
  *      USD: "usd" or "us"
  *      CAD: "cad"
  *      MXN: "mex" or "mxn"
+ * 
+ * Note: This script focuses on counting missing/extra/mismatched entries per master-export pair, without delving into detailed row-level comparisons.
+ * master-only rows with blank / no price values → ignored
+ * master-only rows with actual numeric prices → counted as missing in export
+ * shared rows with numeric prices → compared
+ * export-only rows with numeric prices → counted as extra
  *
  * Run:
  *   node ratesum.js
