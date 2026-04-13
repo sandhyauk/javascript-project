@@ -11,27 +11,12 @@
  *      USD: "usd" or "us"
  *      CAD: "cad"
  *      MXN: "mex" or "mxn"
- *
- * Note: This script focuses on counting missing/extra/mismatched entries per master-export pair.
+ * 
+ * Note: This script focuses on counting missing/extra/mismatched entries per master-export pair, without delving into detailed row-level comparisons.
  * master-only rows with blank / no price values → ignored
  * master-only rows with actual numeric prices → counted as missing in export
  * shared rows with numeric prices → compared
  * export-only rows with numeric prices → counted as extra
- *
- * SPECIAL LOGIC ADDED:
- * 1. For specific MEX match list:
- *    master may have extra categories HOSADA, VIPADA, MEDADA
- *    export may not have them → ignore as error
- *
- * 2. For all other matches not in that list:
- *    master may have extra categories HOSWH, HOSWAP
- *    export may not have them → ignore as error
- *
- * 3. These ignored master-only extras are printed as a separate line item.
- *
- * 4. Tariffs are still compared dynamically, so if more tariffs are added to master
- *    and export also has them, they will still be compared normally.
- * 5. To turn off the special master-only extra category ignore logic and do strict master vs export comparison, set ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE to false (line 48).
  *
  * Run:
  *   node ratesum.js
@@ -42,39 +27,6 @@ const path = require("path");
 const XLSX = require("xlsx");
 
 const BASE_DIR = "C:/Users/san8577/PlaywrightRepos/javascript/Compare";
-
-// ===================== SPECIAL MASTER-ONLY EXTRA CATEGORY LOGIC =====================
-// Comment this whole block out if you want strict master vs export comparison again.
-const ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE = false;
-
-// Matches that should use the MEX extra-category ignore rule
-const MEX_MATCHES = new Set([
-  "M001",
-  "M002",
-  "M012",
-  "M024",
-  "M028",
-  "M036",
-  "M048",
-  "M053",
-  "M054",
-  "M066",
-  "M075",
-  "M079",
-]);
-
-// For MEX matches only: master may contain these extra categories, export may not
-const MEX_MASTER_EXTRA_CATEGORIES = new Set([
-  "HOSADA",
-  "VIPADA",
-  "MEDADA",
-]);
-
-// For all NON-MEX matches: master may contain these extra categories, export may not
-const NON_MEX_MASTER_EXTRA_CATEGORIES = new Set([
-  "HOSWH",
-  "HOSWAP",
-]);
 
 // ===================== ANSI COLOR (no extra installs) =====================
 const ANSI = {
@@ -425,25 +377,6 @@ function normalizeTariffForKey(tariffRaw, { source }) {
   return t;
 }
 
-// -------------------- special ignore helpers --------------------
-
-function getIgnoredMasterExtraCategories(masterTag) {
-  if (!ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE) return new Set();
-  return MEX_MATCHES.has(String(masterTag).toUpperCase())
-    ? MEX_MASTER_EXTRA_CATEGORIES
-    : NON_MEX_MASTER_EXTRA_CATEGORIES;
-}
-
-function shouldIgnoreMasterOnlyRow(masterTag, rowObj) {
-  const ignoreSet = getIgnoredMasterExtraCategories(masterTag);
-  if (!ignoreSet.size) return false;
-
-  const seat = keyText(rowObj?.seat);
-  const aud = keyText(rowObj?.aud);
-
-  return ignoreSet.has(seat) || ignoreSet.has(aud);
-}
-
 // -------------------- table loader --------------------
 
 function loadTableMapFromWorkbook({
@@ -531,7 +464,7 @@ function loadTableMapFromWorkbook({
 
 // -------------------- comparison (SUMMARY COUNTS) --------------------
 
-function compareSummary(currency, masterTag, masterPath, masterTabName, exportPath) {
+function compareSummary(currency, masterPath, masterTabName, exportPath) {
   const masterMap = loadTableMapFromWorkbook({
     filePath: masterPath,
     preferredSheetName: masterTabName,
@@ -551,24 +484,10 @@ function compareSummary(currency, masterTag, masterPath, masterTabName, exportPa
   let missing = 0;
   let mismatches = 0;
 
-  let ignoredMasterExtras = 0;
-  const ignoredCategoriesFound = new Set();
-
   for (const [k, m] of masterMap.entries()) {
     const e = exportMap.get(k);
-
-    if (!e) {
-      if (shouldIgnoreMasterOnlyRow(masterTag, m)) {
-        ignoredMasterExtras++;
-        if (m.seat) ignoredCategoriesFound.add(keyText(m.seat));
-        else if (m.aud) ignoredCategoriesFound.add(keyText(m.aud));
-        continue;
-      }
-
-      missing++;
-    } else if (m.price !== e.price) {
-      mismatches++;
-    }
+    if (!e) missing++;
+    else if (m.price !== e.price) mismatches++;
   }
 
   let extra = 0;
@@ -576,28 +495,18 @@ function compareSummary(currency, masterTag, masterPath, masterTabName, exportPa
     if (!masterMap.has(k)) extra++;
   }
 
-  return {
-    currency,
-    missing,
-    extra,
-    mismatches,
-    ignoredMasterExtras,
-    ignoredCategoriesFound: [...ignoredCategoriesFound].sort(),
-    error: null,
-  };
+  return { currency, missing, extra, mismatches, error: null };
 }
 
-function safeCompareSummary(currency, masterTag, masterPath, masterTabName, exportPath) {
+function safeCompareSummary(currency, masterPath, masterTabName, exportPath) {
   try {
-    return compareSummary(currency, masterTag, masterPath, masterTabName, exportPath);
+    return compareSummary(currency, masterPath, masterTabName, exportPath);
   } catch (e) {
     return {
       currency,
       missing: 0,
       extra: 0,
       mismatches: 0,
-      ignoredMasterExtras: 0,
-      ignoredCategoriesFound: [],
       error: e && e.message ? e.message : String(e),
     };
   }
@@ -647,28 +556,9 @@ function printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSu
     )} | Mismatches:${redIfNonZero(r.mismatches)}`;
   };
 
-  const ignoredLine = (r) => {
-    if (r.error) return null;
-    if (!r.ignoredMasterExtras) return null;
-
-    const cats = r.ignoredCategoriesFound?.length
-      ? r.ignoredCategoriesFound.join(", ")
-      : "N/A";
-
-    return `      Identified as extra in master (ignored): ${r.ignoredMasterExtras} [${cats}]`;
-  };
-
   console.log(line(usdSum));
-  const usdIgnored = ignoredLine(usdSum);
-  if (usdIgnored) console.log(usdIgnored);
-
   console.log(line(cadSum));
-  const cadIgnored = ignoredLine(cadSum);
-  if (cadIgnored) console.log(cadIgnored);
-
   console.log(line(mxnSum));
-  const mxnIgnored = ignoredLine(mxnSum);
-  if (mxnIgnored) console.log(mxnIgnored);
 }
 
 // -------------------- main --------------------
@@ -729,9 +619,9 @@ function main() {
     const cadPath = path.join(BASE_DIR, cadFile);
     const mxnPath = path.join(BASE_DIR, mxnFile);
 
-    const usdSum = safeCompareSummary("USD", masterTag, masterPath, "USD", usdPath);
-    const cadSum = safeCompareSummary("CAD", masterTag, masterPath, "CAD", cadPath);
-    const mxnSum = safeCompareSummary("MXN", masterTag, masterPath, "MXN", mxnPath);
+    const usdSum = safeCompareSummary("USD", masterPath, "USD", usdPath);
+    const cadSum = safeCompareSummary("CAD", masterPath, "CAD", cadPath);
+    const mxnSum = safeCompareSummary("MXN", masterPath, "MXN", mxnPath);
 
     printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSum, mxnSum });
     processed++;
