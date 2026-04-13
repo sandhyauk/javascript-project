@@ -31,7 +31,13 @@
  *
  * 4. Tariffs are still compared dynamically, so if more tariffs are added to master
  *    and export also has them, they will still be compared normally.
- * 5. To turn off the special master-only extra category ignore logic and do strict master vs export comparison, set ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE to false (line 48).
+ *
+ * 5. To turn off the special master-only extra category ignore logic and do strict
+ *    master vs export comparison, set ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE to false.
+ *
+ * 6. ZERO VS BLANK FIX:
+ *    - 0, 0.00, blank, and null are treated as equivalent for comparison purposes.
+ *    - This prevents false missing/extra/mismatch counts caused by zero-vs-empty cells.
  *
  * Run:
  *   node ratesum.js
@@ -290,6 +296,10 @@ function parsePrice(x) {
 
   const maxScore = Math.max(...candidates.map((c) => c.s));
   return candidates.filter((c) => c.s === maxScore).pop().n;
+}
+
+function isZeroOrBlank(v) {
+  return v === null || v === 0;
 }
 
 function rowIsEmpty(row) {
@@ -565,15 +575,36 @@ function compareSummary(currency, masterTag, masterPath, masterTabName, exportPa
         continue;
       }
 
+      // Ignore missing when master value is effectively zero/blank
+      if (isZeroOrBlank(m.price)) {
+        continue;
+      }
+
       missing++;
-    } else if (m.price !== e.price) {
-      mismatches++;
+    } else {
+      const mVal = m.price;
+      const eVal = e.price;
+
+      // Treat 0 and blank as equivalent
+      if (isZeroOrBlank(mVal) && isZeroOrBlank(eVal)) {
+        continue;
+      }
+
+      if (mVal !== eVal) {
+        mismatches++;
+      }
     }
   }
 
   let extra = 0;
-  for (const k of exportMap.keys()) {
-    if (!masterMap.has(k)) extra++;
+  for (const [k, e] of exportMap.entries()) {
+    if (!masterMap.has(k)) {
+      // Ignore export-only rows with zero values
+      if (isZeroOrBlank(e.price)) {
+        continue;
+      }
+      extra++;
+    }
   }
 
   return {

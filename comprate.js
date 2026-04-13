@@ -37,7 +37,12 @@
  *
  * 4. Tariffs are still compared dynamically.
  *    If more tariffs are added to master and export has them too, they will still compare normally.
- * 5.To turn off the special master-only extra category ignore logic and do strict master vs export comparison, set ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE to false.line 54
+ * 5. To turn off the special master-only extra category ignore logic and do strict master vs export comparison,
+ *    set ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE to false.
+ *
+ * 6. ZERO VS BLANK FIX:
+ *    - 0, 0.00, blank, and null are treated as equivalent for comparison purposes.
+ *    - This prevents false missing/extra/mismatch errors caused by zero-vs-empty cells.
  *
  * Run:
  *   node comrate.js
@@ -50,7 +55,7 @@ const XLSX = require("xlsx");
 const BASE_DIR = "C:/Users/san8577/PlaywrightRepos/javascript/Compare";
 
 // ===================== SPECIAL MASTER-ONLY EXTRA CATEGORY LOGIC =====================
-// Comment this whole block out if you want strict master vs export comparison again.
+// Set to true if you want special ignore logic enabled.
 const ENABLE_SPECIAL_MASTER_EXTRA_CATEGORY_IGNORE = false;
 
 // Matches that should use the MEX extra-category ignore rule
@@ -295,6 +300,11 @@ function parsePrice(x) {
   return candidates.filter((c) => c.s === maxScore).pop().n;
 }
 
+// 0 / blank handling
+function isZeroOrBlank(v) {
+  return v === null || v === 0;
+}
+
 function rowIsEmpty(row) {
   return (row || []).every((c) => norm(c) === "");
 }
@@ -368,7 +378,6 @@ function looksLikeSeatLabel(v) {
   if (/^(ES|AM)(-\d)?$/.test(s)) return true;
   if (/^(TECH|YP)$/.test(s)) return true;
 
-  // dynamic categories like OVCAT1, HOSWH, HOSWAP, VIPWH, etc.
   if (/^[A-Z][A-Z0-9-]{2,}$/.test(s)) return true;
 
   return false;
@@ -561,19 +570,40 @@ function compare(currency, masterTag, masterPath, masterTabName, exportPath) {
 
   for (const [k, m] of masterMap.entries()) {
     const e = exportMap.get(k);
+
     if (!e) {
       if (shouldIgnoreMasterOnlyRow(masterTag, m)) {
         ignoredMasterExtra.push(m);
       } else {
+        // zero/blank should not be treated as missing
+        if (isZeroOrBlank(m.price)) {
+          continue;
+        }
         miss.push(m);
       }
-    } else if (m.price !== e.price) {
-      mism.push({ ...m, exportPrice: e.price });
+    } else {
+      const mVal = m.price;
+      const eVal = e.price;
+
+      // Treat 0 and blank as equivalent
+      if (isZeroOrBlank(mVal) && isZeroOrBlank(eVal)) {
+        continue;
+      }
+
+      if (mVal !== eVal) {
+        mism.push({ ...m, exportPrice: eVal });
+      }
     }
   }
 
   for (const [k, e] of exportMap.entries()) {
-    if (!masterMap.has(k)) extra.push(e);
+    if (!masterMap.has(k)) {
+      // Ignore export-only rows with zero values
+      if (isZeroOrBlank(e.price)) {
+        continue;
+      }
+      extra.push(e);
+    }
   }
 
   return { currency, mism, miss, extra, ignoredMasterExtra };
