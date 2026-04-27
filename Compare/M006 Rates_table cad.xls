@@ -1,0 +1,50 @@
+<table>
+<tr>
+<td>Rates table: Match 006 (CAN-VAN) (CAD)</td>
+</tr>
+<tr></tr>
+<tr></tr>
+</table><table border="1">
+<tr>
+<th rowspan="2">Aud Cat</th><th rowspan="2">Tariff</th><th colspan="12">Seat categories (CAD)</th>
+</tr>
+<tr>
+<th>CAT 1</th><th>CAT 2</th><th>CAT 3</th><th>CAT 4</th><th>PSUPPA</th><th>PSUPPB</th><th>PSUPPC</th><th>PSUPPD</th><th>TECH</th><th>ES</th><th>ES-2</th><th>ES-3</th><th>ES-4</th><th>ADA1</th><th>ADA2</th><th>ADA3</th><th>ADA4</th><th>HOS</th><th>HOSADA</th><th>HOSBS</th><th>HOSSRO</th><th>SA</th><th>SAWH</th><th>SABS</th><th>SASRO</th><th>SB</th><th>SBWH</th><th>SBBS</th><th>SBSRO</th><th>SC</th><th>SCWH</th><th>SCBS</th><th>SCSRO</th><th>VIP</th><th>VVIP</th><th>VIPWH</th><th>VIPADA</th><th>VVIPWH</th><th>VVIPBS</th><th>VVIPSR</th><th>MEDIA</th><th>PRSWD</th><th>PRSWOD</th><th>PHTG</th><th>COMM</th><th>MEDADA</th><th>CAT1H</th><th>CAT2H</th><th>CAT3H</th><th>OVCAT1</th><th>OVCAT2</th><th>OVCAT3</th><th>OVCAT4</th><th>AF1</th><th>AF2</th><th>AF3</th><th>YP</th><th>FCAT1</th><th>FCAT2</th><th>FCAT3</th><th>WHITE</th><th>GWHITE</th>
+</tr>
+<tr>
+<th>OccCont</th><th>CUFULL</th><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>COMP</th><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>CUTEAMS</th><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>80.00 C$</td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>80.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>80.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>CUVDTC</th><td>630.00 C$</td><td>530.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>VIP</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>HOS</th><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td></td><td></td><td></td><td>640.00 C$</td><td>640.00 C$</td><td>640.00 C$</td><td>545.00 C$</td><td>1 278.00 C$</td><td>1 278.00 C$</td><td>640.00 C$</td><td>385.00 C$</td><td>1 086.00 C$</td><td>1 086.00 C$</td><td>545.00 C$</td><td>326.00 C$</td><td>448.00 C$</td><td>448.00 C$</td><td>224.00 C$</td><td>136.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>HOS-C</th><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td><td>0.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSFULL</th><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>530.00 C$</td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSDYN</th><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td>530.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>REPLACE</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 C$</td><td>0.00 C$</td>
+</tr>
+<tr>
+<th></th><th>ETD2CU</th><td>615.00 C$</td><td>525.00 C$</td><td>245.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSADDCU</th><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td>95.00 C$</td><td></td><td></td><td></td><td>530.00 C$</td><td>630.00 C$</td><td>530.00 C$</td><td>195.00 C$</td><td></td><td></td>
+</tr>
+</table>

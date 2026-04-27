@@ -1,0 +1,50 @@
+<table>
+<tr>
+<td>Rates table: Match 003 (CAN-TOR)</td>
+</tr>
+<tr></tr>
+<tr></tr>
+</table><table border="1">
+<tr>
+<th rowspan="2">Aud Cat</th><th rowspan="2">Tariff</th><th colspan="12">Seat categories (USD)</th>
+</tr>
+<tr>
+<th>CAT 1</th><th>CAT 2</th><th>CAT 3</th><th>CAT 4</th><th>PSUPPA</th><th>PSUPPB</th><th>PSUPPC</th><th>PSUPPD</th><th>TECH</th><th>ES</th><th>ES-2</th><th>ES-3</th><th>ES-4</th><th>ADA1</th><th>ADA2</th><th>ADA3</th><th>ADA4</th><th>HOS</th><th>HOSADA</th><th>HOSBS</th><th>HOSSRO</th><th>SA</th><th>SAWH</th><th>SABS</th><th>SASRO</th><th>SB</th><th>SBWH</th><th>SBBS</th><th>SBSRO</th><th>SC</th><th>SCWH</th><th>SCBS</th><th>SCSRO</th><th>VIP</th><th>VVIP</th><th>VIPWH</th><th>VIPADA</th><th>VVIPWH</th><th>VVIPBS</th><th>VVIPSR</th><th>MEDIA</th><th>PRSWD</th><th>PRSWOD</th><th>PHTG</th><th>COMM</th><th>MEDADA</th><th>CAT1H</th><th>CAT2H</th><th>CAT3H</th><th>OVCAT1</th><th>OVCAT2</th><th>OVCAT3</th><th>OVCAT4</th><th>YP</th><th>FCAT1</th><th>FCAT2</th><th>FCAT3</th><th>WHITE</th><th>GWHITE</th>
+</tr>
+<tr>
+<th>OccCont</th><th>CUFULL</th><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td></td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>COMP</th><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>CUTEAMS</th><td></td><td></td><td></td><td></td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>60.00 $</td><td></td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>60.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>60.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>CUVDTC</th><td>2 170.00 $</td><td>1 575.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 170.00 $</td><td>1 575.00 $</td><td></td><td></td><td>2 170.00 $</td><td>1 575.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>VIP</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>HOS</th><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 170.00 $</td><td></td><td></td><td></td><td>1 615.00 $</td><td>1 615.00 $</td><td>1 615.00 $</td><td>1 374.00 $</td><td>3 230.00 $</td><td>3 230.00 $</td><td>1 615.00 $</td><td>970.00 $</td><td>2 747.00 $</td><td>2 747.00 $</td><td>1 374.00 $</td><td>824.00 $</td><td>1 132.00 $</td><td>1 132.00 $</td><td>566.00 $</td><td>340.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>HOS-C</th><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 $</td><td></td><td></td><td></td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 $</td><td>0.00 $</td><td>0.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSFULL</th><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td></td><td></td><td></td><td></td><td>1 575.00 $</td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSDYN</th><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td>2 240.00 $</td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td>355.00 $</td><td>1 645.00 $</td><td>2 240.00 $</td><td>1 645.00 $</td><td>980.00 $</td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>REPLACE</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>0.00 $</td><td>0.00 $</td>
+</tr>
+<tr>
+<th></th><th>ETD2CU</th><td>1 970.00 $</td><td>1 430.00 $</td><td>845.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+</tr>
+<tr>
+<th></th><th>GSADDCU</th><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td>355.00 $</td><td>1 575.00 $</td><td>2 170.00 $</td><td>1 575.00 $</td><td>930.00 $</td><td></td><td></td>
+</tr>
+</table>

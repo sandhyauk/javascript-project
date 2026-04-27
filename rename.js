@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 const fs = require("fs");
 const path = require("path");
 
@@ -16,28 +17,42 @@ function extractMNumber(filename) {
   return m ? m[1].toUpperCase() : null;
 }
 
+function mNumberValue(mNum) {
+  return Number(mNum.replace("M", ""));
+}
+
 function isExcelish(name) {
   return /\.(xlsx|xlsm|xls)$/i.test(name) || !path.extname(name);
 }
 
-function findMaster(files) {
-  // Any file containing M### and NOT containing Rates_table
-  const candidates = files.filter((f) =>
-    isExcelish(f.name) &&
-    /\bM\d{3}\b/i.test(f.name) &&
-    !/rates[_\s-]*table/i.test(f.name)
-  );
-
-  if (!candidates.length) return null;
-
-  // pick newest
-  candidates.sort((a, b) => fs.statSync(b.full).mtimeMs - fs.statSync(a.full).mtimeMs);
-  return candidates[0];
+function extractRateTableNumber(filename) {
+  const m = filename.match(/rates\s*[_\-\s]*table\s*\(\s*(\d+)\s*\)/i);
+  return m ? Number(m[1]) : null;
 }
 
-function findRate(files, n) {
-  const re = new RegExp(`rates\\s*[_\\-\\s]*table\\s*\\(\\s*${n}\\s*\\)`, "i");
-  return files.find((f) => isExcelish(f.name) && re.test(f.name)) || null;
+function findMasters(files) {
+  return files
+    .filter((f) =>
+      isExcelish(f.name) &&
+      /\bM\d{3}\b/i.test(f.name) &&
+      !/rates[_\s-]*table/i.test(f.name)
+    )
+    .map((f) => ({
+      ...f,
+      mNum: extractMNumber(f.name)
+    }))
+    .filter((f) => f.mNum)
+    .sort((a, b) => mNumberValue(a.mNum) - mNumberValue(b.mNum));
+}
+
+function findRateTables(files) {
+  return files
+    .map((f) => ({
+      ...f,
+      rateNum: extractRateTableNumber(f.name)
+    }))
+    .filter((f) => isExcelish(f.name) && f.rateNum !== null)
+    .sort((a, b) => a.rateNum - b.rateNum);
 }
 
 function ensureXlsxName(originalName, mNum) {
@@ -48,15 +63,11 @@ function ensureXlsxName(originalName, mNum) {
   return `${finalBase}.xlsx`;
 }
 
-function ensureXlsName(originalName) {
-  // keep base name; force .xls
-  const ext = path.extname(originalName);
-  const base = ext ? path.parse(originalName).name : originalName;
-  return `${base}.xls`;
-}
-
 function moveFile(srcPath, destPath) {
-  // rename = move on same drive; if it fails (rare), fallback to copy+delete
+  if (fs.existsSync(destPath)) {
+    throw new Error(`Destination file already exists: ${destPath}`);
+  }
+
   try {
     fs.renameSync(srcPath, destPath);
   } catch (e) {
@@ -68,57 +79,88 @@ function moveFile(srcPath, destPath) {
 function main() {
   const files = listFiles(SOURCE_DIR);
 
-  const master = findMaster(files);
-  if (!master) {
-    console.error(`❌ No master file found in: ${SOURCE_DIR}`);
+  const masters = findMasters(files);
+  const rateTables = findRateTables(files);
+
+  if (!masters.length) {
+    console.error(`❌ No master files found in: ${SOURCE_DIR}`);
     process.exit(1);
   }
 
-  const mNum = extractMNumber(master.name);
-  if (!mNum) {
-    console.error(`❌ Could not extract M### from master: ${master.name}`);
+  if (!rateTables.length) {
+    console.error(`❌ No Rates_table files found in: ${SOURCE_DIR}`);
     process.exit(1);
   }
 
-  const r1 = findRate(files, 1);
-  const r2 = findRate(files, 2);
-  const r3 = findRate(files, 3);
+  const expectedRateCount = masters.length * 3;
 
-  if (!r1 || !r2 || !r3) {
-    console.error(`❌ Missing required Rates_table files in: ${SOURCE_DIR}`);
-    if (!r1) console.error(" - Rates_table (1)");
-    if (!r2) console.error(" - Rates_table (2)");
-    if (!r3) console.error(" - Rates_table (3)");
+  if (rateTables.length < expectedRateCount) {
+    console.error("❌ Not enough Rates_table files.");
+    console.error(`Masters found: ${masters.length}`);
+    console.error(`Rate tables expected: ${expectedRateCount}`);
+    console.error(`Rate tables found: ${rateTables.length}`);
     process.exit(1);
   }
 
-  // MASTER stays .xlsx in Compare
-  const masterOutName = ensureXlsxName(master.name, mNum);
-  const outMaster = path.join(DEST_DIR, masterOutName);
+  if (rateTables.length > expectedRateCount) {
+    console.error("❌ Too many Rates_table files.");
+    console.error(`Masters found: ${masters.length}`);
+    console.error(`Rate tables expected: ${expectedRateCount}`);
+    console.error(`Rate tables found: ${rateTables.length}`);
+    process.exit(1);
+  }
 
-  // RATES: do NOT open/resave; just rename/move as-is
-  // (We keep their content unchanged; we only control destination filename.)
-  const outUsd = path.join(DEST_DIR, `${mNum} Rates_table usd${path.extname(r1.name) || ".xls"}`);
-  const outCad = path.join(DEST_DIR, `${mNum} Rates_table cad${path.extname(r2.name) || ".xls"}`);
-  const outMex = path.join(DEST_DIR, `${mNum} Rates_table mex${path.extname(r3.name) || ".xls"}`);
+  console.log("Masters sorted:");
+  masters.forEach((m) => console.log(` - ${m.mNum}: ${m.name}`));
 
-  console.log("Using files:");
-  console.log(`MASTER: ${master.name} -> ${path.basename(outMaster)} (xlsx)`);
-  console.log(`USD   : ${r1.name} -> ${path.basename(outUsd)} (no resave)`);
-  console.log(`CAD   : ${r2.name} -> ${path.basename(outCad)} (no resave)`);
-  console.log(`MEX   : ${r3.name} -> ${path.basename(outMex)} (no resave)`);
   console.log("");
+  console.log("Rate tables sorted:");
+  rateTables.forEach((r) => console.log(` - Rates_table (${r.rateNum}): ${r.name}`));
 
-  // Move files out of convert folder (so originals are removed automatically)
-  moveFile(master.full, outMaster);
-  moveFile(r1.full, outUsd);
-  moveFile(r2.full, outCad);
-  moveFile(r3.full, outMex);
+  console.log("");
+  console.log("Mapping:");
 
+  const moves = [];
+
+  masters.forEach((master, index) => {
+    const mNum = master.mNum;
+
+    const usd = rateTables[index * 3];
+    const cad = rateTables[index * 3 + 1];
+    const mex = rateTables[index * 3 + 2];
+
+    const masterOutName = ensureXlsxName(master.name, mNum);
+
+    const outMaster = path.join(DEST_DIR, masterOutName);
+    const outUsd = path.join(DEST_DIR, `${mNum} Rates_table usd${path.extname(usd.name) || ".xls"}`);
+    const outCad = path.join(DEST_DIR, `${mNum} Rates_table cad${path.extname(cad.name) || ".xls"}`);
+    const outMex = path.join(DEST_DIR, `${mNum} Rates_table mex${path.extname(mex.name) || ".xls"}`);
+
+    console.log("");
+    console.log(`${mNum}`);
+    console.log(`MASTER: ${master.name} -> ${path.basename(outMaster)}`);
+    console.log(`USD   : ${usd.name} -> ${path.basename(outUsd)}`);
+    console.log(`CAD   : ${cad.name} -> ${path.basename(outCad)}`);
+    console.log(`MEX   : ${mex.name} -> ${path.basename(outMex)}`);
+
+    moves.push({ from: master.full, to: outMaster });
+    moves.push({ from: usd.full, to: outUsd });
+    moves.push({ from: cad.full, to: outCad });
+    moves.push({ from: mex.full, to: outMex });
+  });
+
+  console.log("");
+  console.log("Moving files...");
+
+  for (const move of moves) {
+    moveFile(move.from, move.to);
+  }
+
+  console.log("");
   console.log("✅ Done.");
-  console.log("✅ Master moved to Compare as .xlsx (no resave).");
-  console.log("✅ Rate tables moved/renamed to Compare (no resave).");
-  console.log("🗑️ Nothing left behind in convert (moved).");
+  console.log("✅ Masters moved to Compare as .xlsx name.");
+  console.log("✅ Rate tables moved/renamed by sorted M number.");
+  console.log("✅ Every 3 rate tables mapped to one master.");
 }
 
 main();
