@@ -1,24 +1,42 @@
 #!/usr/bin/env node
 /**
- * MULTI-MASTER RATE TABLE COMPARER (ROBUST) - NO TARIFF MAPPING NEEDED
+ * ratesum.js
  *
- * FIXES ADDED:
- * 1. STRICT ZERO CHECK:
- *    - 0.00 is a real value
- *    - blank/null is not the same as 0.00
- *    - export-only 0.00 is reported as EXTRA_IN_EXPORT
- *    - master-only 0.00 is reported as MISSING_IN_EXPORT
- *
- * 2. NEGATIVE VALUE CHECK:
- *    - any value < 0 in master or export is reported as NEGATIVE_VALUE
- *
- * Run:
- *   node comrate.js
+ * Checks:
+ * 1. Missing in export
+ * 2. Extra in export
+ * 3. Mismatches
+ * 4. Negative values in master/export
+ * 5. STRICT ZERO CHECK:
+ *    - blank and 0.00 are NOT treated the same
+ *    - master blank vs export 0.00 is counted as EXTRA
+ *    - master 0.00 vs export blank is counted as MISSING
  */
 
 const fs = require("fs");
 const path = require("path");
 const XLSX = require("xlsx");
+
+// ================= REPO ACCESS CHECK =================
+// If this GitHub repo is no longer public/accessible, the tool stops.
+async function checkRepoAccess() {
+  const REPO_CHECK_URL = "https://raw.githubusercontent.com/sandhyauk/javascript/main/README.md";
+
+  try {
+    const response = await fetch(REPO_CHECK_URL, { cache: "no-store" });
+
+    if (!response.ok) {
+      console.log("🚫 Repository access blocked. Tool disabled.");
+      process.exit(1);
+    }
+
+    console.log("✅ Repository access verified.");
+  } catch (error) {
+    console.log("🚫 Cannot reach repository. Tool disabled.");
+    process.exit(1);
+  }
+}
+// =====================================================
 
 const BASE_DIR = "C:/Users/san8577/PlaywrightRepos/javascript/Compare";
 
@@ -32,17 +50,12 @@ const MEX_MATCHES = new Set([
 const MEX_MASTER_EXTRA_CATEGORIES = new Set(["HOSADA", "VIPADA", "MEDADA"]);
 const NON_MEX_MASTER_EXTRA_CATEGORIES = new Set(["HOSWH", "HOSWAP"]);
 
-const ANSI = {
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  cyan: "\x1b[36m",
-  gray: "\x1b[90m",
-  reset: "\x1b[0m",
-};
+const ANSI = { red: "\x1b[31m", reset: "\x1b[0m" };
 
-function colorize(color, text) {
-  return `${color}${text}${ANSI.reset}`;
+function redIfNonZero(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return String(n);
+  return num !== 0 ? `${ANSI.red}${num}${ANSI.reset}` : String(num);
 }
 
 const TARIFF_EQUIV_MASTER_TO_EXPORT = {};
@@ -104,7 +117,7 @@ function htmlSingleTableToAoA(tableHtml) {
         row[col] = spanMap[col].text;
         spanMap[col].remaining -= 1;
         if (spanMap[col].remaining <= 0) spanMap[col] = null;
-        col += 1;
+        col++;
       }
     }
 
@@ -153,7 +166,9 @@ function htmlTablesToPseudoWorkbook(html) {
   const tableRe = /<table[^>]*>[\s\S]*?<\/table>/gi;
   let m;
 
-  while ((m = tableRe.exec(html))) tables.push(m[0]);
+  while ((m = tableRe.exec(html))) {
+    tables.push(m[0]);
+  }
 
   const SheetNames = [];
   const __aoaBySheet = {};
@@ -168,14 +183,20 @@ function htmlTablesToPseudoWorkbook(html) {
 }
 
 function readWorkbookSmart(filePath) {
-  if (!fs.existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File not found: ${filePath}`);
+  }
 
   if (isProbablyHtmlFile(filePath)) {
     const html = fs.readFileSync(filePath, "utf8");
     return htmlTablesToPseudoWorkbook(html);
   }
 
-  return XLSX.readFile(filePath, { cellText: true, cellNF: true, cellDates: false });
+  return XLSX.readFile(filePath, {
+    cellText: true,
+    cellNF: true,
+    cellDates: false,
+  });
 }
 
 function sheetToAoA(wb, sheetName, { raw = true } = {}) {
@@ -184,7 +205,11 @@ function sheetToAoA(wb, sheetName, { raw = true } = {}) {
   }
 
   const ws = wb.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw });
+  return XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    defval: null,
+    raw,
+  });
 }
 
 function norm(x) {
@@ -269,9 +294,10 @@ function looksLikeTariffCell(t) {
 function findHeaderInAoA(aoa) {
   for (let r = 0; r < Math.min(aoa.length, 200); r++) {
     const cells = (aoa[r] || []).map((c) => normLower(c));
-    if (cells.some(looksLikeAudCell) && cells.some(looksLikeTariffCell)) return r;
+    if (cells.some(looksLikeAudCell) && cells.some(looksLikeTariffCell)) {
+      return r;
+    }
   }
-
   return -1;
 }
 
@@ -281,9 +307,6 @@ function findSheetWithHeader(wb, fileLabel, { raw = true } = {}) {
     const h = findHeaderInAoA(aoa);
     if (h !== -1) return { sheetName, headerRow: h };
   }
-
-  console.error(`\n[${fileLabel}] No header found. Sheets were:`);
-  wb.SheetNames.forEach((s) => console.error("  - " + s));
   return null;
 }
 
@@ -292,21 +315,10 @@ function looksLikeSeatLabel(v) {
   if (!s) return false;
 
   const blocked = new Set([
-    "AUD",
-    "AUDCAT",
-    "AUDIENCE",
-    "AUDIENCECATEGORY",
-    "TARIFF",
-    "RATE",
-    "PRICE",
-    "PRICELEVEL",
-    "LEVEL",
-    "SEAT",
-    "SEATCATEGORY",
-    "SEATCATEGORIES",
-    "CATEGORY",
-    "CATEGORIES",
-    "ALLPRICES",
+    "AUD", "AUDCAT", "AUDIENCE", "AUDIENCECATEGORY",
+    "TARIFF", "RATE", "PRICE", "PRICELEVEL", "LEVEL",
+    "SEAT", "SEATCATEGORY", "SEATCATEGORIES",
+    "CATEGORY", "CATEGORIES", "ALLPRICES",
   ]);
 
   if (blocked.has(s)) return false;
@@ -411,7 +423,9 @@ function loadTableMapFromWorkbook({
     const rawModeForHeader = source === "export" ? false : true;
     const pick = findSheetWithHeader(wb, label, { raw: rawModeForHeader });
 
-    if (!pick) throw new Error(`Header not found in any sheet for: ${filePath}`);
+    if (!pick) {
+      throw new Error(`Header not found in any sheet for: ${filePath}`);
+    }
 
     sheetName = pick.sheetName;
   }
@@ -420,7 +434,9 @@ function loadTableMapFromWorkbook({
   const aoa = sheetToAoA(wb, sheetName, { raw: rawMode });
 
   const h = findHeaderInAoA(aoa);
-  if (h === -1) throw new Error(`Header not found in ${filePath} (sheet: ${sheetName})`);
+  if (h === -1) {
+    throw new Error(`Header not found in ${filePath} (sheet: ${sheetName})`);
+  }
 
   const headerRow = aoa[h] || [];
 
@@ -476,28 +492,28 @@ function loadTableMapFromWorkbook({
     for (const [col, sKey] of seatCols) {
       const p = parsePrice(row[col]);
 
-      // null means blank/no value.
-      // 0 means real 0.00 and must be compared.
       if (p === null) continue;
 
       any = true;
 
-      const obj = {
+      const k = `${aud}||${tariff}||${sKey}`;
+
+      const rowObj = {
         aud,
         tariff,
         seat: sKey,
         price: p,
         rowNumber: r + 1,
         colNumber: col + 1,
+        filePath,
         source,
       };
 
       if (p < 0) {
-        negatives.push(obj);
+        negatives.push(rowObj);
       }
 
-      const k = `${aud}||${tariff}||${sKey}`;
-      map.set(k, obj);
+      map.set(k, rowObj);
     }
 
     if (any) seenData++;
@@ -506,7 +522,7 @@ function loadTableMapFromWorkbook({
   return { map, negatives };
 }
 
-function compare(currency, masterTag, masterPath, masterTabName, exportPath) {
+function compareSummary(currency, masterTag, masterPath, masterTabName, exportPath) {
   const masterLoaded = loadTableMapFromWorkbook({
     filePath: masterPath,
     preferredSheetName: masterTabName,
@@ -526,157 +542,78 @@ function compare(currency, masterTag, masterPath, masterTabName, exportPath) {
   const masterMap = masterLoaded.map;
   const exportMap = exportLoaded.map;
 
-  const mism = [];
-  const miss = [];
-  const extra = [];
-  const ignoredMasterExtra = [];
-  const negatives = [...masterLoaded.negatives, ...exportLoaded.negatives];
+  let missing = 0;
+  let extra = 0;
+  let mismatches = 0;
+
+  const negativeIssues = [
+    ...masterLoaded.negatives,
+    ...exportLoaded.negatives,
+  ];
+
+  let ignoredMasterExtras = 0;
+  const ignoredCategoriesFound = new Set();
 
   for (const [k, m] of masterMap.entries()) {
     const e = exportMap.get(k);
 
     if (!e) {
       if (shouldIgnoreMasterOnlyRow(masterTag, m)) {
-        ignoredMasterExtra.push(m);
-      } else {
-        // master has actual value, including 0.00, but export does not
-        miss.push(m);
-      }
-    } else {
-      const mVal = m.price;
-      const eVal = e.price;
+        ignoredMasterExtras++;
 
-      // strict comparison
-      if (mVal !== eVal) {
-        mism.push({ ...m, exportPrice: eVal });
+        if (m.seat) ignoredCategoriesFound.add(keyText(m.seat));
+        else if (m.aud) ignoredCategoriesFound.add(keyText(m.aud));
+
+        continue;
       }
+
+      missing++;
+      continue;
+    }
+
+    const mVal = m.price;
+    const eVal = e.price;
+
+    if (mVal !== eVal) {
+      mismatches++;
     }
   }
 
   for (const [k, e] of exportMap.entries()) {
     if (!masterMap.has(k)) {
-      // export has actual value, including 0.00, but master does not
-      extra.push(e);
+      extra++;
     }
   }
 
-  return { currency, mism, miss, extra, ignoredMasterExtra, negatives };
-}
-
-function printCurrencyReport(r) {
-  console.log(colorize(ANSI.cyan, `\nCURRENCY: ${r.currency}`));
-  console.log(colorize(ANSI.gray, "--------------------------------------------------"));
-  console.log(`Missing in EXPORT (present in MASTER, not in export): ${r.miss.length}`);
-  console.log(`Extra in EXPORT (present in export, not in MASTER): ${r.extra.length}`);
-  console.log(`Value mismatches: ${r.mism.length}`);
-  console.log(`Negative values: ${(r.negatives || []).length}`);
-  console.log(`Identified as extra in master (ignored): ${(r.ignoredMasterExtra || []).length}`);
-
-  if (r.error) {
-    console.log(colorize(ANSI.red, `ERROR: ${r.error}`));
-  }
-
-  const showList = (title, arr, formatter, highlightColor) => {
-    console.log(`\n${title}:`);
-
-    if (!arr.length) {
-      console.log(colorize(ANSI.green, "  (none)"));
-      return;
-    }
-
-    for (const x of arr) {
-      console.log(colorize(highlightColor, `  ${formatter(x)}`));
-    }
+  return {
+    currency,
+    missing,
+    extra,
+    mismatches,
+    negatives: negativeIssues.length,
+    negativeIssues,
+    ignoredMasterExtras,
+    ignoredCategoriesFound: [...ignoredCategoriesFound].sort(),
+    error: null,
   };
-
-  showList(
-    "NEGATIVE VALUES",
-    r.negatives || [],
-    (x) => `${x.source.toUpperCase()} | Row ${x.rowNumber} Col ${x.colNumber} | ${x.aud} | ${x.tariff} | ${x.seat} => ${x.price}`,
-    ANSI.red
-  );
-
-  showList(
-    "IDENTIFIED AS EXTRA IN MASTER (IGNORED)",
-    r.ignoredMasterExtra || [],
-    (x) => `${x.aud} | ${x.tariff} | ${x.seat} => MASTER=${x.price}`,
-    ANSI.gray
-  );
-
-  showList(
-    "MISSING IN EXPORT",
-    r.miss,
-    (x) => `${x.aud} | ${x.tariff} | ${x.seat} => MASTER=${x.price}`,
-    ANSI.yellow
-  );
-
-  showList(
-    "EXTRA IN EXPORT",
-    r.extra,
-    (x) => `${x.aud} | ${x.tariff} | ${x.seat} => EXPORT=${x.price}`,
-    ANSI.yellow
-  );
-
-  showList(
-    "VALUE MISMATCHES",
-    r.mism,
-    (x) => `${x.aud} | ${x.tariff} | ${x.seat} => MASTER=${x.price} | EXPORT=${x.exportPrice}`,
-    ANSI.red
-  );
-
-  console.log(colorize(ANSI.gray, "\n=================================================="));
 }
 
-function csvEscape(v) {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-function writeCsv(results, csvPath) {
-  const rows = [
-    ["Currency", "Type", "AudCat", "Tariff", "Seat", "MasterPrice", "ExportPrice", "Source", "Row", "Column", "Error"],
-  ];
-
-  for (const r of results) {
-    if (r.error) {
-      rows.push([r.currency, "ERROR", "", "", "", "", "", "", "", "", r.error]);
-      continue;
-    }
-
-    for (const x of r.negatives || []) {
-      rows.push([
-        r.currency,
-        "NEGATIVE_VALUE",
-        x.aud,
-        x.tariff,
-        x.seat,
-        x.source === "master" ? x.price : "",
-        x.source === "export" ? x.price : "",
-        x.source,
-        x.rowNumber,
-        x.colNumber,
-        "",
-      ]);
-    }
-
-    for (const x of r.ignoredMasterExtra || []) {
-      rows.push([r.currency, "IGNORED_EXTRA_IN_MASTER", x.aud, x.tariff, x.seat, x.price, "", "master", "", "", ""]);
-    }
-
-    for (const x of r.miss) {
-      rows.push([r.currency, "MISSING_IN_EXPORT", x.aud, x.tariff, x.seat, x.price, "", "master", x.rowNumber || "", x.colNumber || "", ""]);
-    }
-
-    for (const x of r.extra) {
-      rows.push([r.currency, "EXTRA_IN_EXPORT", x.aud, x.tariff, x.seat, "", x.price, "export", x.rowNumber || "", x.colNumber || "", ""]);
-    }
-
-    for (const x of r.mism) {
-      rows.push([r.currency, "VALUE_MISMATCH", x.aud, x.tariff, x.seat, x.price, x.exportPrice, "", x.rowNumber || "", x.colNumber || "", ""]);
-    }
+function safeCompareSummary(currency, masterTag, masterPath, masterTabName, exportPath) {
+  try {
+    return compareSummary(currency, masterTag, masterPath, masterTabName, exportPath);
+  } catch (e) {
+    return {
+      currency,
+      missing: 0,
+      extra: 0,
+      mismatches: 0,
+      negatives: 0,
+      negativeIssues: [],
+      ignoredMasterExtras: 0,
+      ignoredCategoriesFound: [],
+      error: e && e.message ? e.message : String(e),
+    };
   }
-
-  fs.writeFileSync(csvPath, rows.map((r) => r.map(csvEscape).join(",")).join("\n"), "utf8");
 }
 
 function getMasterTag(filename) {
@@ -693,8 +630,7 @@ function isExportCandidate(f, masterTag) {
   const lower = f.toLowerCase();
 
   if (!f.toUpperCase().startsWith(masterTag)) return false;
-  if (!(lower.endsWith(".xls") || lower.endsWith(".xlsx"))) return false;
-  if (lower.endsWith(".xlsx") && !lower.includes("rates_table")) return false;
+  if (!lower.endsWith(".xls")) return false;
 
   return true;
 }
@@ -710,28 +646,60 @@ function findExports(files, masterTag, tokens) {
   });
 }
 
-function safeCompare(currency, masterTag, masterPath, masterTabName, exportPath) {
-  try {
-    return compare(currency, masterTag, masterPath, masterTabName, exportPath);
-  } catch (e) {
-    const msg = e && e.message ? e.message : String(e);
-    return {
-      currency,
-      mism: [],
-      miss: [],
-      extra: [],
-      ignoredMasterExtra: [],
-      negatives: [],
-      error: msg,
-    };
-  }
+function printNegativeIssues(r) {
+  if (!r.negativeIssues || r.negativeIssues.length === 0) return;
+
+  console.log(`      NEGATIVE VALUES FOUND:`);
+
+  r.negativeIssues.forEach((n) => {
+    console.log(
+      `        ${n.source.toUpperCase()} | Row ${n.rowNumber} Col ${n.colNumber} | ${n.aud} | ${n.tariff} | ${n.seat} => ${n.price}`
+    );
+  });
+}
+
+function printMasterBlock({ masterFile, usdFile, cadFile, mxnFile, usdSum, cadSum, mxnSum }) {
+  console.log(`\nMASTER: ${masterFile}`);
+  console.log(`USD  : ${usdFile}`);
+  console.log(`CAD  : ${cadFile}`);
+  console.log(`MXN  : ${mxnFile}`);
+
+  const line = (r) => {
+    if (r.error) return `  ${r.currency} -> ERROR: ${r.error}`;
+
+    return `  ${r.currency} -> Missing in export:${redIfNonZero(r.missing)} | Extra in export:${redIfNonZero(
+      r.extra
+    )} | Mismatches:${redIfNonZero(r.mismatches)} | Negatives:${redIfNonZero(r.negatives)}`;
+  };
+
+  const ignoredLine = (r) => {
+    if (r.error) return null;
+    if (!r.ignoredMasterExtras) return null;
+
+    const cats = r.ignoredCategoriesFound?.length
+      ? r.ignoredCategoriesFound.join(", ")
+      : "N/A";
+
+    return `      Identified as extra in master (ignored): ${r.ignoredMasterExtras} [${cats}]`;
+  };
+
+  console.log(line(usdSum));
+  const usdIgnored = ignoredLine(usdSum);
+  if (usdIgnored) console.log(usdIgnored);
+  printNegativeIssues(usdSum);
+
+  console.log(line(cadSum));
+  const cadIgnored = ignoredLine(cadSum);
+  if (cadIgnored) console.log(cadIgnored);
+  printNegativeIssues(cadSum);
+
+  console.log(line(mxnSum));
+  const mxnIgnored = ignoredLine(mxnSum);
+  if (mxnIgnored) console.log(mxnIgnored);
+  printNegativeIssues(mxnSum);
 }
 
 function main() {
-  console.log("=== MULTI MASTER VERSION RUNNING (comrate.js) ===");
-  console.log("SCRIPT:", __filename);
-  console.log("Compare folder:", BASE_DIR);
-
   if (!fs.existsSync(BASE_DIR)) {
     console.error("Compare folder not found:", BASE_DIR);
     process.exit(1);
@@ -741,22 +709,23 @@ function main() {
 
   const masterFiles = files.filter((f) => {
     const lower = f.toLowerCase();
-    return /^m\d+/i.test(f) && lower.endsWith(".xlsx");
+    return lower.endsWith(".xlsx") && /m\d+/i.test(f);
   });
 
-  console.log("Masters found:", masterFiles.length);
-  masterFiles.forEach((f) => console.log("  -", f));
-
   if (!masterFiles.length) {
-    console.error("\nNo master .xlsx files found starting with M.");
+    console.error("\nNo master .xlsx files found containing M###.");
+    console.error("Files found:");
+    files.forEach((f) => console.error("  - " + f));
     process.exit(1);
   }
 
   masterFiles.sort((a, b) => {
     const ta = getMasterTag(a) || "";
     const tb = getMasterTag(b) || "";
+
     const na = parseInt(ta.slice(1), 10);
     const nb = parseInt(tb.slice(1), 10);
+
     return (na || 0) - (nb || 0);
   });
 
@@ -765,28 +734,17 @@ function main() {
 
   for (const masterFile of masterFiles) {
     const masterTag = getMasterTag(masterFile);
-    if (!masterTag) continue;
 
-    const usdMatches = findExports(files, masterTag, ["usd"]);
+    if (!masterTag) {
+      skipped++;
+      continue;
+    }
+
+    const usdMatches = findExports(files, masterTag, ["usd", "us"]);
     const cadMatches = findExports(files, masterTag, ["cad"]);
     const mexMatches = findExports(files, masterTag, ["mex", "mxn"]);
 
-    console.log("\n----------------------------------------------");
-    console.log(`SET ${masterTag}`);
-    console.log("  master:", masterFile);
-    console.log("  usdMatches:", usdMatches.length, usdMatches);
-    console.log("  cadMatches:", cadMatches.length, cadMatches);
-    console.log("  mexMatches:", mexMatches.length, mexMatches);
-
-    const problems = [];
-
-    if (usdMatches.length !== 1) problems.push(`USD expected 1, found ${usdMatches.length}`);
-    if (cadMatches.length !== 1) problems.push(`CAD expected 1, found ${cadMatches.length}`);
-    if (mexMatches.length !== 1) problems.push(`MXN expected 1, found ${mexMatches.length}`);
-
-    if (problems.length) {
-      console.error(`Skipping ${masterTag} because exports are not clean:`);
-      problems.forEach((p) => console.error("  - " + p));
+    if (usdMatches.length !== 1 || cadMatches.length !== 1 || mexMatches.length !== 1) {
       skipped++;
       continue;
     }
@@ -800,35 +758,28 @@ function main() {
     const cadPath = path.join(BASE_DIR, cadFile);
     const mxnPath = path.join(BASE_DIR, mxnFile);
 
-    const outputCsv = path.join(BASE_DIR, `${masterTag}-rates-report.csv`);
+    const usdSum = safeCompareSummary("USD", masterTag, masterPath, "USD", usdPath);
+    const cadSum = safeCompareSummary("CAD", masterTag, masterPath, "CAD", cadPath);
+    const mxnSum = safeCompareSummary("MXN", masterTag, masterPath, "MXN", mxnPath);
 
-    console.log("\n==============================================");
-    console.log("MASTER TAG:", masterTag);
-    console.log("MASTER:", masterFile);
-    console.log("USD  :", usdFile);
-    console.log("CAD  :", cadFile);
-    console.log("MXN  :", mxnFile);
+    printMasterBlock({
+      masterFile,
+      usdFile,
+      cadFile,
+      mxnFile,
+      usdSum,
+      cadSum,
+      mxnSum,
+    });
 
-    const results = [
-      safeCompare("USD", masterTag, masterPath, "USD", usdPath),
-      safeCompare("CAD", masterTag, masterPath, "CAD", cadPath),
-      safeCompare("MXN", masterTag, masterPath, "MXN", mxnPath),
-    ];
-
-    results.forEach((r) => printCurrencyReport(r));
-
-    try {
-      writeCsv(results, outputCsv);
-      console.log(`\nCSV written to: ${outputCsv}`);
-      processed++;
-    } catch (err) {
-      console.error(`FAILED TO WRITE CSV for ${masterTag}:`, err && err.message ? err.message : err);
-      skipped++;
-    }
+    processed++;
   }
 
-  console.log("\n==============================================");
-  console.log(`Done. Processed: ${processed}, Skipped: ${skipped}`);
+  console.log(`\nDone. Processed masters: ${processed}, Skipped masters: ${skipped}`);
 }
 
-main();
+// Run GitHub repo access check first, then run the tool
+(async () => {
+  await checkRepoAccess();
+  main();
+})();
